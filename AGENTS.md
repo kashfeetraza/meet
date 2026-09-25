@@ -2,42 +2,42 @@
 
 ## Stack
 
-* **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui
-* **Backend:** FastAPI, Python 3.13, uv, Ruff, pytest
+* **web:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui
+* **api:** FastAPI, Python 3.13, uv, Ruff, pytest
 * **Local AI:** Ollama at `http://localhost:11434`, default model `qwen3.5:2b`
 * **Cloud AI fallback:** OpenAI, Anthropic, Gemini
-* **Frontend:** `frontend/`
-* **Backend:** `backend/`
+* **web:** `web/`
+* **api:** `api/`
 
 ## Commands
 
-### Frontend
+### web
 
 ```powershell
-cd frontend
+cd web
 npm install
 npm run dev
 ```
 
 Port: `3000`
 
-### Backend
+### api
 
 ```powershell
-cd backend
+cd api
 uv sync
 uv run fastapi dev
 ```
 
 Port: `8000`
 
-Add backend package:
+Add api package:
 
 ```powershell
 uv add <package>
 ```
 
-Add frontend package:
+Add web package:
 
 ```powershell
 npm install <package>
@@ -46,7 +46,7 @@ npm install <package>
 Run tests:
 
 ```powershell
-cd backend
+cd api
 pytest
 ```
 
@@ -54,7 +54,7 @@ pytest
 
 * **Inspect existing code before changing it.**
 * Follow existing project patterns; avoid unnecessary rewrites.
-* Keep frontend, backend, and AI-provider logic separated.
+* Keep web, api, and AI-provider logic separated.
 * Use Ollama as the default AI provider and cloud APIs as fallback when configured.
 * Never hard-code API keys or secrets.
 * Never commit `.env` files or credentials.
