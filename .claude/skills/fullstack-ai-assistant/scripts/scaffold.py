@@ -3,7 +3,7 @@
 
 Usage:
     python scaffold.py --dest ./acme-assistant --app-name "Acme Copilot"
-    python scaffold.py --dest ./demo --app-name "Helpdesk AI" --user-name "Rizwan" --force
+    python scaffold.py --dest ./demo --app-name "Helpdesk AI" --user-name "Kashfeet" --force
 
 Only the Python standard library is used, so this runs anywhere Python 3.9+ exists.
 """
@@ -21,7 +21,7 @@ TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "template"
 
 TEMPLATE_SLUG = "ai-assistant"
 TEMPLATE_APP_NAME = "Assistant"
-TEMPLATE_USER = "Rizwan"
+TEMPLATE_USER = "Kashfeet"
 TEMPLATE_DESCRIPTION = "AI assistant powered by local and cloud models"
 
 IGNORE = shutil.ignore_patterns(

@@ -47,6 +47,7 @@ export interface ChatMessage {
   error?: string;
   pending?: boolean;
   feedback?: "up" | "down" | null;
+  images?: string[]; // Base64 encoded images or URLs
 }
 
 export interface Conversation {

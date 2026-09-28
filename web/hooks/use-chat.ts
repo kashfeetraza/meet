@@ -85,7 +85,7 @@ export function useChat(selection: ModelSelection, onFinish?: () => void) {
 
       try {
         await streamChat({
-          messages: history.filter((m) => !m.error).map(({ role, content }) => ({ role, content })),
+          messages: history.filter((m) => !m.error).map(({ role, content, images }) => ({ role, content, images })),
           selection: selectionRef.current,
           signal: ctrl.signal,
           onMeta: (meta) => patchMessage(convId, reply.id, { meta }),
@@ -118,10 +118,10 @@ export function useChat(selection: ModelSelection, onFinish?: () => void) {
   );
 
   const send = useCallback(
-    (text: string) => {
+    (text: string, images?: string[]) => {
       const content = text.trim();
-      if (!content || controller.current) return;
-      const userMsg: ChatMessage = { id: uid(), role: "user", content, createdAt: Date.now() };
+      if ((!content && (!images || images.length === 0)) || controller.current) return;
+      const userMsg: ChatMessage = { id: uid(), role: "user", content, createdAt: Date.now(), images };
       const existing = conversations.find((c) => c.id === activeId);
       if (existing) {
         void generate(existing.id, [...existing.messages.filter((m) => !m.error), userMsg]);
@@ -143,7 +143,7 @@ export function useChat(selection: ModelSelection, onFinish?: () => void) {
 
   const stop = useCallback(() => controller.current?.abort(), []);
 
-  /** Re-run the assistant reply at `messageId` (drops it and everything after). */
+  /** Re-run the assistant reply at `messageId` (drops it and after). */
   const regenerate = useCallback(
     (messageId: string) => {
       const conv = conversations.find((c) => c.id === activeId);
@@ -176,7 +176,7 @@ export function useChat(selection: ModelSelection, onFinish?: () => void) {
     [activeId],
   );
 
-  /** Deletes a chat and returns a function that restores it. */
+  /** Deletes a chat from history. */
   const deleteChat = useCallback(
     (id: string) => {
       const index = conversations.findIndex((c) => c.id === id);
@@ -184,7 +184,7 @@ export function useChat(selection: ModelSelection, onFinish?: () => void) {
       if (!removed) return () => {};
       if (id === activeId) {
         controller.current?.abort();
-        setActiveId(null);
+        setSidebarOpen(false);
       }
       setConversations((list) => list.filter((c) => c.id !== id));
       return () =>

@@ -30,7 +30,7 @@ Everything user-visible that names the product lives in `web/lib/config.ts`:
 export const APP_CONFIG = {
   appName: "Assistant",
   appDescription: "AI assistant powered by local and cloud models",
-  user: { name: "Rizwan", subtitle: "Workspace" },   // placeholder until auth
+  user: { name: "Kashfeet", subtitle: "Workspace" },   // placeholder until auth
 };
 ```
 

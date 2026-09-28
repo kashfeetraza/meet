@@ -93,6 +93,18 @@ export function Message({
     return (
       <div className="group flex flex-col items-end gap-1">
         <div className="max-w-[85%] rounded-3xl bg-secondary px-4 py-2.5 text-[15px] leading-7 break-words whitespace-pre-wrap">
+          {message.images && message.images.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {message.images.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt="attachment"
+                  className="max-h-60 rounded-lg border bg-muted object-cover"
+                />
+              ))}
+            </div>
+          )}
           {message.content}
         </div>
         <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
@@ -159,8 +171,8 @@ export function Message({
             </IconAction>
             {isLast && (
               <IconAction label="Regenerate" onClick={() => onRegenerate(message.id)}>
-                <RefreshCwIcon />
-              </IconAction>
+              <RefreshCwIcon />
+            </IconAction>
             )}
             {meta && (
               <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">

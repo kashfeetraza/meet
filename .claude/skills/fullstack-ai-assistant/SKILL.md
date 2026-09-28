@@ -33,12 +33,12 @@ leaves a real choice open. Useful inputs:
 | Input | Default |
 |---|---|
 | App display name | `Assistant` |
-| Placeholder user name | `Rizwan` |
+| Placeholder user name | `Kashfeet` |
 | Cloud providers to enable | all five, enabled by whichever keys are set |
 | Extra scope (auth, DB history, uploads, RAG) | none; see `references/extending.md` |
 
 Never use other invented person names in UI or docs; the placeholder user is
-**Rizwan** unless the user gives another name.
+**Kashfeet** unless the user gives another name.
 
 ### 2. Refresh versions when time has passed
 
@@ -53,7 +53,7 @@ verification. Don't downgrade the user's requested major versions.
 
 ```bash
 python <skill-dir>/scripts/scaffold.py --dest ./<folder> \
-  --app-name "Acme Copilot" --user-name "Rizwan" \
+  --app-name "Acme Copilot" --user-name "Kashfeet" \
   --description "Acme's internal AI assistant"
 ```
 
