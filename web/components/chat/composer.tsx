@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ArrowUpIcon, SquareIcon, PaperclipIcon, XIcon } from "lucide-react";
+import { ArrowUpIcon, SquareIcon, PaperclipIcon, XIcon, AudioLinesIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { APP_CONFIG } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 export function Composer({
   onSend,
   onStop,
+  onVoice,
   streaming,
   disabled,
   placeholder = `Message ${APP_CONFIG.appName}…`,
@@ -17,6 +19,7 @@ export function Composer({
 }: {
   onSend: (text: string, images?: string[]) => void;
   onStop: () => void;
+  onVoice?: () => void;
   streaming: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -73,6 +76,7 @@ export function Composer({
   };
 
   const canSend = streaming || ((!!value.trim() || selectedImages.length > 0) && !disabled);
+  const showVoice = !!onVoice && !streaming && !value.trim();
 
   return (
     <form
@@ -132,15 +136,32 @@ export function Composer({
           >
             <PaperclipIcon className="size-4" />
           </Button>
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!canSend}
-            aria-label={streaming ? "Stop generating" : "Send message"}
-            className={cn("rounded-full", !canSend && "opacity-30")}
-          >
-            {streaming ? <SquareIcon className="size-3.5 fill-current" /> : <ArrowUpIcon />}
-          </Button>
+          {showVoice ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={onVoice}
+                  aria-label="Start voice mode"
+                  className="rounded-full"
+                >
+                  <AudioLinesIcon />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Start voice mode</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!canSend}
+              aria-label={streaming ? "Stop generating" : "Send message"}
+              className={cn("rounded-full", !canSend && "opacity-30")}
+            >
+              {streaming ? <SquareIcon className="size-3.5 fill-current" /> : <ArrowUpIcon />}
+            </Button>
+          )}
         </div>
       </div>
     </form>

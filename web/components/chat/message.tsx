@@ -5,6 +5,7 @@ import {
   CheckIcon,
   CopyIcon,
   HardDriveIcon,
+  MicIcon,
   CloudIcon,
   RefreshCwIcon,
   ThumbsDownIcon,
@@ -107,8 +108,16 @@ export function Message({
           )}
           {message.content}
         </div>
-        <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-          <CopyAction text={message.content} />
+        <div className="flex items-center gap-1">
+          {message.voice && (
+            <span className="flex items-center gap-1 px-1 text-xs text-muted-foreground">
+              <MicIcon className="size-3" />
+              Spoken
+            </span>
+          )}
+          <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+            <CopyAction text={message.content} />
+          </div>
         </div>
       </div>
     );
