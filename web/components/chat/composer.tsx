@@ -1,70 +1,69 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ArrowUpIcon, SquareIcon, PaperclipIcon, XIcon, AudioLinesIcon } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { ArrowUpIcon, AudioLinesIcon, CameraIcon, ImageIcon, PlusIcon, SquareIcon } from "lucide-react";
 
+import { AttachmentTray } from "@/components/photos/attachment-tray";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { UseAttachments } from "@/hooks/use-attachments";
 import { APP_CONFIG } from "@/lib/config";
+import { ACCEPT_ATTR } from "@/lib/images";
+import type { ChatImage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function Composer({
   onSend,
   onStop,
   onVoice,
+  attachments,
+  photoLimit,
+  notice,
+  blocked,
   streaming,
   disabled,
   placeholder = `Message ${APP_CONFIG.appName}…`,
   autoFocus,
 }: {
-  onSend: (text: string, images?: string[]) => void;
+  onSend: (text: string, images: ChatImage[]) => void;
   onStop: () => void;
   onVoice?: () => void;
+  attachments?: UseAttachments;
+  photoLimit?: number;
+  notice?: ReactNode;
+  blocked?: boolean;
   streaming: boolean;
   disabled?: boolean;
   placeholder?: string;
   autoFocus?: boolean;
 }) {
   const [value, setValue] = useState("");
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const ref = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const [coarse, setCoarse] = useState(false);
 
   useEffect(() => {
     if (autoFocus && window.matchMedia("(min-width: 768px)").matches) ref.current?.focus();
+    setCoarse(window.matchMedia("(pointer: coarse)").matches);
   }, [autoFocus]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    const newImages: string[] = [];
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue;
-
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      newImages.push(base64);
-    }
-    setSelectedImages((prev) => [...prev, ...newImages]);
-    // Reset input so same file can be picked again
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const removeImage = (index: number) => {
-    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  const photoCount = attachments?.items.length ?? 0;
+  const processing = !!attachments?.processing;
+  const hasContent = !!value.trim() || photoCount > 0;
 
   const submit = (e?: FormEvent) => {
     e?.preventDefault();
     if (streaming) return onStop();
-    if ((!value.trim() && selectedImages.length === 0) || disabled) return;
-    onSend(value, selectedImages);
+    if (!hasContent || disabled || processing || blocked) return;
+    onSend(value, attachments?.takeAll() ?? []);
     setValue("");
-    setSelectedImages([]);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -75,8 +74,21 @@ export function Composer({
     }
   };
 
-  const canSend = streaming || ((!!value.trim() || selectedImages.length > 0) && !disabled);
-  const showVoice = !!onVoice && !streaming && !value.trim();
+  const canSend = streaming || (hasContent && !disabled && !processing && !blocked);
+  const showVoice = !!onVoice && !streaming && !hasContent;
+  const sendLabel = streaming
+    ? "Stop generating"
+    : processing
+      ? "Waiting for photos to be ready"
+      : "Send message";
+
+  const pick = (input: HTMLInputElement | null) => {
+    requestAnimationFrame(() => input?.click());
+  };
+  const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) attachments?.add([...e.target.files]);
+    e.target.value = "";
+  };
 
   return (
     <form
@@ -87,23 +99,8 @@ export function Composer({
         Message
       </label>
 
-      {selectedImages.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-2 p-1">
-          {selectedImages.map((src, i) => (
-            <div key={i} className="relative size-16 rounded-lg overflow-hidden border bg-muted">
-              <img src={src} alt="upload preview" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => removeImage(i)}
-                className="absolute top-0.5 right-0.5 rounded-full bg-destructive text-destructive-foreground p-0.5 hover:bg-destructive/90"
-                aria-label="Remove image"
-              >
-                <XIcon className="size-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {notice}
+      {attachments && <AttachmentTray attachments={attachments} />}
 
       <div className="flex items-end gap-2">
         <textarea
@@ -118,24 +115,75 @@ export function Composer({
           className="field-sizing-content max-h-52 min-h-7 w-full resize-none bg-transparent py-1.5 text-[15px] leading-6 outline-none placeholder:text-muted-foreground"
         />
         <div className="flex items-center gap-1 pb-1">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-full text-muted-foreground hover:text-foreground"
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Upload image"
-          >
-            <PaperclipIcon className="size-4" />
-          </Button>
+          {attachments && (
+            <>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Add photos"
+                        disabled={disabled}
+                        className="-ml-2 rounded-full text-muted-foreground hover:text-foreground"
+                      >
+                        <PlusIcon />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Add photos</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="start" side="top" className="w-72">
+                  <DropdownMenuItem onSelect={() => pick(fileInput.current)} className="items-start">
+                    <ImageIcon className="mt-0.5" />
+                    <span className="flex flex-col">
+                      <span>Add photos</span>
+                      <span className="text-xs text-muted-foreground">
+                        JPEG, PNG, WebP or GIF · up to {photoLimit ?? 5}
+                      </span>
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => pick(cameraInput.current)} className="items-start">
+                    <CameraIcon className="mt-0.5" />
+                    <span className="flex flex-col">
+                      <span>Take a photo</span>
+                      <span className="text-xs text-muted-foreground">
+                        {coarse ? "Opens your camera" : "Uses your camera on phones and tablets"}
+                      </span>
+                    </span>
+                  </DropdownMenuItem>
+                  <p className="px-2 pt-1 pb-1.5 text-xs text-muted-foreground">
+                    You can also paste or drop photos.
+                  </p>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <input
+                ref={fileInput}
+                type="file"
+                accept={ACCEPT_ATTR}
+                multiple
+                hidden
+                onChange={onFiles}
+                data-testid="photo-input"
+              />
+              <input
+                ref={cameraInput}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={onFiles}
+              />
+              {photoCount > 0 && (
+                <span className="text-xs text-muted-foreground tabular-nums" aria-live="polite">
+                  {photoCount} of {photoLimit ?? 5} photos
+                </span>
+              )}
+            </>
+          )}
+          <div className="flex-1" />
           {showVoice ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -156,7 +204,7 @@ export function Composer({
               type="submit"
               size="icon"
               disabled={!canSend}
-              aria-label={streaming ? "Stop generating" : "Send message"}
+              aria-label={sendLabel}
               className={cn("rounded-full", !canSend && "opacity-30")}
             >
               {streaming ? <SquareIcon className="size-3.5 fill-current" /> : <ArrowUpIcon />}
